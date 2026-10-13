@@ -16,3 +16,16 @@ test('navega para clientes e exibe dados persistidos', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Clientes' })).toBeVisible();
   await expect(page.getByText('Ana Beatriz Costa')).toBeVisible();
 });
+
+test('abre os submenus de inteligência', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Entrar no Áurea' }).click();
+
+  await page.getByRole('button', { name: /Relatórios/ }).click();
+  await expect(page.getByRole('heading', { name: 'Relatórios' })).toBeVisible();
+  await expect(page.getByText('Resumo executivo')).toBeVisible();
+
+  await page.getByRole('button', { name: /Insights/ }).click();
+  await expect(page.getByRole('heading', { name: 'Insights' })).toBeVisible();
+  await expect(page.getByText('Proteja a previsibilidade do fluxo de caixa')).toBeVisible();
+});

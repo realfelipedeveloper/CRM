@@ -34,8 +34,8 @@
           <button [class.active]="pagina() === item.nome" (click)="navegar(item.nome)"><span class="nav-icon">{{ item.icone }}</span>{{ item.nome }}@if (item.nome === 'Agenda') { <b>{{ agendamentos().length }}</b> }</button>
         }
         <p class="nav-label second">INTELIGÊNCIA</p>
-        <button><span class="nav-icon">◫</span>Relatórios</button>
-        <button><span class="nav-icon">✦</span>Insights <i>NOVO</i></button>
+        <button [class.active]="pagina() === 'Relatórios'" (click)="navegar('Relatórios')"><span class="nav-icon">◫</span>Relatórios</button>
+        <button [class.active]="pagina() === 'Insights'" (click)="navegar('Insights')"><span class="nav-icon">✦</span>Insights <i>NOVO</i></button>
       </nav>
       <div class="sidebar-bottom"><button><span class="nav-icon">⚙</span>Configurações</button><div class="user"><span>{{ iniciais(usuario()) }}</span><div><strong>{{ usuario() }}</strong><small>{{ rotulo(perfil()) }}</small></div><button (click)="sair()" aria-label="Sair">↪</button></div></div>
     </aside>
@@ -66,7 +66,7 @@
 
           <section class="dashboard-grid lower">
             <article class="card pipeline-summary"><div class="card-head"><div><h2>Visão do pipeline</h2><p>Oportunidades por etapa</p></div><button (click)="navegar('Pipeline')">Abrir pipeline →</button></div>@for (etapa of d.pipelinePorEtapa; track etapa.etapa) { <div class="pipeline-row"><span>{{ rotulo(etapa.etapa) }}</span><div><i [style.width.%]="etapa.quantidade * 18"></i></div><b>{{ etapa.quantidade }}</b><strong>{{ moeda(etapa.valor) }}</strong></div> }</article>
-            <article class="card insight-card"><span class="insight-icon">✦</span><div><p class="eyebrow">INSIGHT DO DIA</p><h2>Sua receita prevista está saudável</h2><p>Há <strong>{{ moeda(d.receitaPrevista) }}</strong> em recebimentos pendentes. Acompanhe os vencimentos para preservar o fluxo de caixa.</p><button>Explorar análise →</button></div></article>
+            <article class="card insight-card"><span class="insight-icon">✦</span><div><p class="eyebrow">INSIGHT DO DIA</p><h2>Sua receita prevista está saudável</h2><p>Há <strong>{{ moeda(d.receitaPrevista) }}</strong> em recebimentos pendentes. Acompanhe os vencimentos para preservar o fluxo de caixa.</p><button (click)="navegar('Insights')">Explorar análise →</button></div></article>
           </section>
         }
 
@@ -89,6 +89,36 @@
           <div class="page-head"><div><p class="eyebrow vinho">SAÚDE FINANCEIRA</p><h1>Financeiro</h1><p>Receitas, despesas e previsibilidade de caixa.</p></div><button class="primary-button compact">＋ Novo lançamento</button></div>
           <section class="mini-kpis"><article><small>Receita recebida</small><strong>{{ moeda(dashboard()?.receitaRecebida ?? 0) }}</strong></article><article><small>Despesas pagas</small><strong>{{ moeda(dashboard()?.despesasPagas ?? 0) }}</strong></article><article><small>A receber</small><strong>{{ moeda(dashboard()?.receitaPrevista ?? 0) }}</strong></article></section>
           <article class="card table-card"><div class="table-scroll"><table><thead><tr><th>Descrição</th><th>Categoria</th><th>Vencimento</th><th>Status</th><th class="right">Valor</th></tr></thead><tbody>@for (l of lancamentos(); track l.id) { <tr><td><strong>{{ l.descricao }}</strong><small>{{ rotulo(l.tipo) }}</small></td><td>{{ l.categoria }}</td><td>{{ data(l.vencimento) }}</td><td><span class="status" [class.pending]="l.status === 'PENDENTE'">{{ rotulo(l.status) }}</span></td><td class="right money" [class.expense]="l.tipo === 'DESPESA'">{{ l.tipo === 'DESPESA' ? '−' : '+' }} {{ moeda(l.valor) }}</td></tr> }</tbody></table></div></article>
+        }
+
+        @if (pagina() === 'Relatórios' && dashboard(); as d) {
+          <div class="page-head"><div><p class="eyebrow vinho">ANÁLISE CONSOLIDADA</p><h1>Relatórios</h1><p>Visões gerenciais construídas com os dados atuais do CRM.</p></div><button class="primary-button compact" (click)="exportarResumoFinanceiro()">⇩ Exportar resumo CSV</button></div>
+          <section class="report-grid">
+            @for (relatorio of relatorios; track relatorio.titulo) {
+              <article class="card report-card"><span class="report-icon" [attr.data-color]="relatorio.cor">{{ relatorio.icone }}</span><div><h2>{{ relatorio.titulo }}</h2><p>{{ relatorio.descricao }}</p></div><button aria-label="Abrir relatório {{ relatorio.titulo }}">→</button></article>
+            }
+          </section>
+          <article class="card report-summary">
+            <div class="card-head"><div><h2>Resumo executivo</h2><p>Indicadores consolidados do período atual</p></div><span class="updated">Atualizado agora</span></div>
+            <div class="summary-table">
+              <div><span>Receita recebida</span><strong>{{ moeda(d.receitaRecebida) }}</strong></div>
+              <div><span>Despesas pagas</span><strong>{{ moeda(d.despesasPagas) }}</strong></div>
+              <div><span>Resultado operacional</span><strong [class.negative]="d.resultadoOperacional < 0">{{ moeda(d.resultadoOperacional) }}</strong></div>
+              <div><span>Receita prevista</span><strong>{{ moeda(d.receitaPrevista) }}</strong></div>
+              <div><span>Pipeline aberto</span><strong>{{ moeda(d.valorPipeline) }}</strong></div>
+              <div><span>Conversão histórica</span><strong>{{ d.taxaConversao }}%</strong></div>
+            </div>
+          </article>
+        }
+
+        @if (pagina() === 'Insights' && dashboard(); as d) {
+          <div class="page-head"><div><p class="eyebrow vinho">INTELIGÊNCIA DE NEGÓCIOS</p><h1>Insights</h1><p>Evidências e próximos passos derivados das métricas disponíveis.</p></div><button class="outline-button" (click)="carregarTudo()">↻ Atualizar análise</button></div>
+          <section class="insights-overview"><article><small>INSIGHTS ATIVOS</small><strong>3</strong><p>recomendações fundamentadas</p></article><article><small>RECEITA PREVISTA</small><strong>{{ moeda(d.receitaPrevista) }}</strong><p>em recebimentos pendentes</p></article><article><small>PIPELINE ABERTO</small><strong>{{ moeda(d.valorPipeline) }}</strong><p>{{ d.taxaConversao }}% de conversão histórica</p></article></section>
+          <section class="insights-list">
+            <article class="card insight-detail positive"><div class="insight-severity"><span>✦</span><small>OPORTUNIDADE</small></div><div class="insight-copy"><h2>Proteja a previsibilidade do fluxo de caixa</h2><p>Existem <strong>{{ moeda(d.receitaPrevista) }}</strong> em recebimentos previstos. O acompanhamento dos vencimentos ajuda a preservar o resultado operacional.</p><div class="evidence"><span>Evidência</span> Receita prevista calculada a partir de lançamentos pendentes.</div></div><button (click)="navegar('Financeiro')">Ver financeiro →</button></article>
+            <article class="card insight-detail attention"><div class="insight-severity"><span>◇</span><small>COMERCIAL</small></div><div class="insight-copy"><h2>Converta o valor já presente no pipeline</h2><p>O pipeline aberto soma <strong>{{ moeda(d.valorPipeline) }}</strong>, com taxa histórica de conversão de <strong>{{ d.taxaConversao }}%</strong>. Priorize negociações nas etapas mais avançadas.</p><div class="evidence"><span>Limitação</span> A taxa histórica não garante conversões futuras.</div></div><button (click)="navegar('Pipeline')">Ver pipeline →</button></article>
+            <article class="card insight-detail neutral"><div class="insight-severity"><span>♙</span><small>RELACIONAMENTO</small></div><div class="insight-copy"><h2>Há espaço para trabalhar relacionamento</h2><p>A base contém <strong>{{ d.clientesAtivos }} clientes ativos</strong> e <strong>{{ d.leadsAbertos }} leads em acompanhamento</strong>. Segmente o contato por estágio e consentimento.</p><div class="evidence"><span>Privacidade</span> Use dados comerciais somente dentro das permissões e consentimentos aplicáveis.</div></div><button (click)="navegar('Clientes')">Ver clientes →</button></article>
+          </section>
         }
       </main>
     </section>

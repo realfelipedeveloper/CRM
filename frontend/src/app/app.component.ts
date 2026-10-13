@@ -5,7 +5,7 @@ import { finalize, forkJoin } from 'rxjs';
 import { ApiService, Cliente, Dashboard, Lancamento, Oportunidade } from './api.service';
 import { formatarMoeda, obterIniciais, obterRotulo } from './formatacao';
 
-type Pagina = 'Visão geral' | 'Clientes' | 'Pipeline' | 'Agenda' | 'Financeiro';
+type Pagina = 'Visão geral' | 'Clientes' | 'Pipeline' | 'Agenda' | 'Financeiro' | 'Relatórios' | 'Insights';
 
 @Component({
   selector: 'crm-root',
@@ -37,6 +37,12 @@ export class AppComponent implements OnInit {
     { nome: 'Pipeline', icone: '◇' }, { nome: 'Agenda', icone: '□' }, { nome: 'Financeiro', icone: '↗' }
   ];
   readonly etapas = ['NOVO', 'QUALIFICACAO', 'PROPOSTA', 'NEGOCIACAO'];
+  readonly relatorios = [
+    { titulo: 'Desempenho financeiro', descricao: 'Receitas, despesas, resultado operacional e valores previstos.', icone: '↗', cor: 'vinho' },
+    { titulo: 'Conversão comercial', descricao: 'Pipeline, oportunidades e taxa histórica de conversão.', icone: '◇', cor: 'roxo' },
+    { titulo: 'Carteira de clientes', descricao: 'Clientes ativos, relacionamento e oportunidades de recorrência.', icone: '♙', cor: 'dourado' },
+    { titulo: 'Operação e agenda', descricao: 'Atendimentos futuros, ocupação e compromissos por profissional.', icone: '□', cor: 'verde' }
+  ];
   readonly loginForm;
 
   constructor(private readonly api: ApiService, fb: FormBuilder) {
@@ -76,6 +82,26 @@ export class AppComponent implements OnInit {
   }
 
   navegar(pagina: Pagina): void { this.pagina.set(pagina); this.menuAberto.set(false); }
+  exportarResumoFinanceiro(): void {
+    const d = this.dashboard();
+    if (!d) return;
+    const linhas: (string | number)[][] = [
+      ['Indicador', 'Valor'],
+      ['Receita recebida', d.receitaRecebida],
+      ['Despesas pagas', d.despesasPagas],
+      ['Resultado operacional', d.resultadoOperacional],
+      ['Receita prevista', d.receitaPrevista],
+      ['Valor do pipeline', d.valorPipeline],
+      ['Taxa de conversão (%)', d.taxaConversao]
+    ];
+    const conteudo = '\uFEFF' + linhas.map(linha => linha.join(';')).join('\n');
+    const url = URL.createObjectURL(new Blob([conteudo], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `resumo-executivo-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
   alternarTema(): void { const escuro = !this.temaEscuro(); this.temaEscuro.set(escuro); localStorage.setItem('crm_tema', escuro ? 'dark' : 'light'); document.documentElement.dataset['theme'] = escuro ? 'dark' : 'light'; }
   sair(): void { sessionStorage.clear(); this.autenticado.set(false); }
   filtrarClientes(valor: string): void { this.busca.set(valor); this.api.clientes(valor).subscribe(r => this.clientes.set(r.content)); }
