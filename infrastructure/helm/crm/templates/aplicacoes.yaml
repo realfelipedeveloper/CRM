@@ -1,0 +1,66 @@
+{{- $root := . -}}
+{{- range $nome := list "backend" "frontend" "agentes" "n8n" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crm-{{ $nome }}
+  namespace: {{ $root.Values.namespace }}
+  labels:
+    {{- include "crm.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $nome }}
+spec:
+  replicas: {{ index $root.Values.replicas $nome }}
+  selector:
+    matchLabels: { app.kubernetes.io/name: crm-{{ $nome }} }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: crm-{{ $nome }} }
+    spec:
+      serviceAccountName: crm-aplicacao
+      securityContext: { runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: {{ $nome }}
+          image: {{ index $root.Values.images $nome }}
+          imagePullPolicy: {{ $root.Values.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ if eq $nome "frontend" }}80{{ else if eq $nome "backend" }}8080{{ else if eq $nome "agentes" }}8090{{ else }}5678{{ end }}
+          envFrom:
+            - configMapRef: { name: crm-config }
+            - secretRef: { name: crm-secrets }
+          {{- if eq $nome "backend" }}
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://crm-postgres:5432/{{ $root.Values.database.name }}
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom: { configMapKeyRef: { name: crm-config, key: POSTGRES_USER } }
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom: { secretKeyRef: { name: crm-secrets, key: POSTGRES_PASSWORD } }
+          {{- end }}
+          readinessProbe:
+            httpGet: { path: {{ if eq $nome "backend" }}/actuator/health/readiness{{ else if eq $nome "agentes" }}/health{{ else }}/{{ end }}, port: http }
+            initialDelaySeconds: 8
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: {{ if eq $nome "backend" }}/actuator/health/liveness{{ else if eq $nome "agentes" }}/health{{ else }}/{{ end }}, port: http }
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: ["ALL"] } }
+          {{- if ne $nome "n8n" }}
+          resources: {{- index $root.Values.resources $nome | toYaml | nindent 12 }}
+          {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crm-{{ $nome }}
+  namespace: {{ $root.Values.namespace }}
+spec:
+  selector: { app.kubernetes.io/name: crm-{{ $nome }} }
+  ports:
+    - name: http
+      port: {{ if eq $nome "frontend" }}80{{ else if eq $nome "backend" }}8080{{ else if eq $nome "agentes" }}8090{{ else }}5678{{ end }}
+      targetPort: http
+---
+{{- end }}
+

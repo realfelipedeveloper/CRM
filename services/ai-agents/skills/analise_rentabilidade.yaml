@@ -1,0 +1,17 @@
+nome: Análise de rentabilidade
+responsabilidade: Comparar receita, custos e margem sem inferir dados ausentes.
+entradas:
+  - token_do_usuario
+  - periodo
+  - dimensao
+saidas:
+  - evidencias
+  - limitacoes
+  - recomendacoes
+validacoes:
+  - custos obrigatórios para cálculo de lucro
+  - mínimo de cinco observações
+permissoes:
+  - BI_RENTABILIDADE_VISUALIZAR
+erros:
+  custos_ausentes: Não há dados suficientes para calcular lucro ou margem.

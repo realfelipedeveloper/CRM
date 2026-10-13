@@ -1,0 +1,37 @@
+namespace: crm-aurea
+imagePullPolicy: IfNotPresent
+
+images:
+  backend: crm-aurea/backend:0.1.0
+  frontend: crm-aurea/frontend:0.1.0
+  agentes: crm-aurea/agentes:0.1.0
+  n8n: n8nio/n8n:1.113.3
+  postgres: postgres:17-alpine
+
+replicas:
+  backend: 2
+  frontend: 2
+  agentes: 1
+  n8n: 1
+
+resources:
+  backend: { requests: { cpu: 200m, memory: 384Mi }, limits: { cpu: "1", memory: 768Mi } }
+  frontend: { requests: { cpu: 50m, memory: 64Mi }, limits: { cpu: 300m, memory: 192Mi } }
+  agentes: { requests: { cpu: 100m, memory: 192Mi }, limits: { cpu: 500m, memory: 512Mi } }
+
+database:
+  name: crm
+  user: crm
+  storage: 10Gi
+
+ingress:
+  enabled: true
+  className: nginx
+  host: crm.local
+
+secrets:
+  postgresPassword: troque-esta-senha
+  jwtSecret: troque-por-uma-chave-com-no-minimo-32-caracteres
+  openaiApiKey: ""
+  n8nEncryptionKey: troque-esta-chave
+

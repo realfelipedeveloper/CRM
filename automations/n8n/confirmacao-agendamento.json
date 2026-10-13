@@ -1,0 +1,34 @@
+{
+  "name": "CRM - Confirmação de agendamento",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "crm/agendamentos/confirmar", "authentication": "headerAuth", "responseMode": "responseNode" },
+      "id": "webhook-confirmacao", "name": "Receber agendamento", "type": "n8n-nodes-base.webhook", "typeVersion": 2, "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "conditions": { "options": { "caseSensitive": true }, "conditions": [
+          { "leftValue": "={{ $json.body.id }}", "rightValue": "", "operator": { "type": "string", "operation": "notEmpty" } },
+          { "leftValue": "={{ $json.body.idempotencyKey }}", "rightValue": "", "operator": { "type": "string", "operation": "notEmpty" } }
+        ], "combinator": "and" }
+      },
+      "id": "validar", "name": "Validar contrato", "type": "n8n-nodes-base.if", "typeVersion": 2, "position": [500, 300]
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={\"recebido\":true,\"mensagem\":\"Confirmação enfileirada com segurança.\"}", "options": { "responseCode": 202 } },
+      "id": "resposta-ok", "name": "Responder aceite", "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1, "position": [760, 230]
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={\"recebido\":false,\"mensagem\":\"Contrato ou chave de idempotência inválida.\"}", "options": { "responseCode": 400 } },
+      "id": "resposta-erro", "name": "Responder erro", "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1, "position": [760, 380]
+    }
+  ],
+  "connections": {
+    "Receber agendamento": { "main": [[{ "node": "Validar contrato", "type": "main", "index": 0 }]] },
+    "Validar contrato": { "main": [[{ "node": "Responder aceite", "type": "main", "index": 0 }], [{ "node": "Responder erro", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "saveDataErrorExecution": "all", "saveDataSuccessExecution": "none" },
+  "active": false,
+  "versionId": "18a9f638-a59d-4dc1-a48d-9fe0a1d0ab11"
+}
+

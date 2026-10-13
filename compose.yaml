@@ -1,0 +1,90 @@
+name: crm-aurea
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-crm}
+      POSTGRES_USER: ${POSTGRES_USER:-crm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crm_local_seguro}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks: [crm]
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: demo
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-crm}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-crm}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-crm_local_seguro}
+      CRM_JWT_SECRET: ${JWT_SECRET:-chave-local-de-desenvolvimento-32-caracteres}
+      CRM_CORS_ORIGINS: http://localhost:4200
+    ports: ["8080:8080"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks: [crm]
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports: ["4200:80"]
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [crm]
+
+  agentes:
+    build: ./services/ai-agents
+    restart: unless-stopped
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      CRM_API_URL: http://backend:8080
+    ports: ["8090:8090"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+    networks: [crm]
+
+  n8n:
+    image: n8nio/n8n:1.113.3
+    restart: unless-stopped
+    environment:
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-chave-local-n8n}
+      GENERIC_TIMEZONE: America/Sao_Paulo
+    ports: ["5678:5678"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5678/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./automations/n8n:/workflows:ro
+    networks: [crm]
+
+volumes:
+  postgres_data:
+  n8n_data:
+
+networks:
+  crm:
+    driver: bridge
+

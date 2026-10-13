@@ -1,0 +1,16 @@
+nome: Consulta de KPIs
+responsabilidade: Consultar indicadores consolidados e autorizados do CRM.
+entradas:
+  - token_do_usuario
+  - periodo
+saidas:
+  - metricas_estruturadas
+validacoes:
+  - autenticação obrigatória
+  - período máximo de 24 meses
+permissoes:
+  - BI_VISUALIZAR
+erros:
+  sem_permissao: Acesso aos indicadores não autorizado.
+  dados_indisponiveis: Indicadores temporariamente indisponíveis.
+

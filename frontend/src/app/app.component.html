@@ -1,0 +1,96 @@
+@if (!autenticado()) {
+  <main class="login-page">
+    <section class="login-brand" aria-label="Apresentação do Áurea CRM">
+      <div class="brand-mark grande"><span>Á</span></div>
+      <div>
+        <p class="eyebrow">GESTÃO QUE ILUMINA DECISÕES</p>
+        <h1>O cuidado da sua clínica,<br><em>em uma única visão.</em></h1>
+        <p class="lead">Relacionamento, agenda, receita e inteligência para transformar dados em crescimento sustentável.</p>
+      </div>
+      <div class="login-proof"><span>✓</span><p><strong>Dados protegidos por padrão</strong><br>Controle de acesso, auditoria e privacidade desde a origem.</p></div>
+    </section>
+    <section class="login-panel">
+      <button class="theme-button login-theme" (click)="alternarTema()" aria-label="Alternar tema">{{ temaEscuro() ? '☀' : '☾' }}</button>
+      <form class="login-card" [formGroup]="loginForm" (ngSubmit)="entrar()">
+        <div class="mobile-brand"><div class="brand-mark"><span>Á</span></div><strong>Áurea</strong></div>
+        <p class="eyebrow vinho">BEM-VINDA DE VOLTA</p>
+        <h2>Acesse sua conta</h2>
+        <p class="subtle">Use suas credenciais para continuar.</p>
+        <label>E-mail profissional<input type="email" formControlName="email" autocomplete="username"></label>
+        <label>Senha<input type="password" formControlName="senha" autocomplete="current-password"></label>
+        @if (erro()) { <div class="alerta" role="alert">{{ erro() }}</div> }
+        <button class="primary-button" type="submit" [disabled]="carregando() || loginForm.invalid">{{ carregando() ? 'Entrando…' : 'Entrar no Áurea' }} <span>→</span></button>
+        <p class="demo-hint">Ambiente de demonstração preenchido para avaliação.</p>
+      </form>
+    </section>
+  </main>
+} @else {
+  <div class="app-shell">
+    <aside class="sidebar" [class.open]="menuAberto()">
+      <div class="logo"><div class="brand-mark"><span>Á</span></div><div><strong>Áurea</strong><small>CRM para estética</small></div></div>
+      <nav aria-label="Navegação principal">
+        <p class="nav-label">GESTÃO</p>
+        @for (item of paginas; track item.nome) {
+          <button [class.active]="pagina() === item.nome" (click)="navegar(item.nome)"><span class="nav-icon">{{ item.icone }}</span>{{ item.nome }}@if (item.nome === 'Agenda') { <b>{{ agendamentos().length }}</b> }</button>
+        }
+        <p class="nav-label second">INTELIGÊNCIA</p>
+        <button><span class="nav-icon">◫</span>Relatórios</button>
+        <button><span class="nav-icon">✦</span>Insights <i>NOVO</i></button>
+      </nav>
+      <div class="sidebar-bottom"><button><span class="nav-icon">⚙</span>Configurações</button><div class="user"><span>{{ iniciais(usuario()) }}</span><div><strong>{{ usuario() }}</strong><small>{{ rotulo(perfil()) }}</small></div><button (click)="sair()" aria-label="Sair">↪</button></div></div>
+    </aside>
+
+    <section class="workspace">
+      <header class="topbar">
+        <button class="menu-button" (click)="menuAberto.set(!menuAberto())" aria-label="Abrir menu">☰</button>
+        <div class="breadcrumb"><span>Áurea</span><b>/</b>{{ pagina() }}</div>
+        <div class="top-actions"><button class="search-button">⌕ <span>Buscar no CRM</span><kbd>Ctrl K</kbd></button><button class="theme-button" (click)="alternarTema()" aria-label="Alternar tema">{{ temaEscuro() ? '☀' : '☾' }}</button><button class="notification" aria-label="Notificações">♢<i></i></button><button class="primary-button compact">＋ Novo</button></div>
+      </header>
+      <main class="content">
+        @if (erro()) { <div class="alerta inline" role="alert">{{ erro() }} <button (click)="carregarTudo()">Tentar novamente</button></div> }
+        @if (carregando() && !dashboard()) { <div class="loading"><span></span><p>Organizando sua visão do negócio…</p></div> }
+
+        @if (pagina() === 'Visão geral' && dashboard(); as d) {
+          <div class="page-head"><div><p class="eyebrow vinho">{{ dataAtualLabel }}</p><h1>Bom dia, {{ usuario().split(' ')[0] }}.</h1><p>Veja como sua clínica está performando neste mês.</p></div><button class="outline-button">Últimos 30 dias⌄</button></div>
+          <section class="kpi-grid" aria-label="Indicadores principais">
+            <article class="kpi featured"><div class="kpi-title"><span class="icon-box">↗</span><small>RECEITA RECEBIDA</small><i>+12,4%</i></div><strong>{{ moeda(d.receitaRecebida) }}</strong><p>no mês atual</p><div class="spark"><span style="height:25%"></span><span style="height:38%"></span><span style="height:32%"></span><span style="height:56%"></span><span style="height:48%"></span><span style="height:70%"></span><span style="height:88%"></span></div></article>
+            <article class="kpi"><div class="kpi-title"><span class="icon-box green">◎</span><small>RESULTADO OPERACIONAL</small></div><strong>{{ moeda(d.resultadoOperacional) }}</strong><p>receita menos despesas pagas</p></article>
+            <article class="kpi"><div class="kpi-title"><span class="icon-box gold">♙</span><small>CLIENTES ATIVOS</small></div><strong>{{ d.clientesAtivos }}</strong><p>{{ d.leadsAbertos }} leads em acompanhamento</p></article>
+            <article class="kpi"><div class="kpi-title"><span class="icon-box purple">◇</span><small>PIPELINE ABERTO</small></div><strong>{{ moeda(d.valorPipeline) }}</strong><p>{{ d.taxaConversao }}% de conversão histórica</p></article>
+          </section>
+
+          <section class="dashboard-grid">
+            <article class="card revenue-card"><div class="card-head"><div><h2>Receita recebida</h2><p>Movimentação dos últimos 7 dias</p></div><strong>{{ moeda(d.receitaRecebida) }}</strong></div><div class="bar-chart" role="img" aria-label="Receita recebida nos últimos sete dias">@for (item of d.receitaUltimosSeteDias; track item.data) { <div class="bar-col" [title]="moeda(item.receita)"><span [style.height.%]="alturaBarra(item.receita)"></span><small>{{ data(item.data) }}</small></div> }</div></article>
+            <article class="card agenda-card"><div class="card-head"><div><h2>Próximos atendimentos</h2><p>Sua agenda mais próxima</p></div><button (click)="navegar('Agenda')">Ver agenda →</button></div><div class="appointments">@for (item of d.proximosAgendamentos; track item.inicio) { <div class="appointment"><div class="date-box"><strong>{{ hora(item.inicio) }}</strong><small>{{ data(item.inicio) }}</small></div><div class="avatar">{{ iniciais(item.cliente) }}</div><div class="appointment-main"><strong>{{ item.cliente }}</strong><small>{{ item.servico }} · {{ item.profissional }}</small></div><span class="status">{{ rotulo(item.status) }}</span></div> } @empty { <p class="empty">Nenhum atendimento próximo.</p> }</div></article>
+          </section>
+
+          <section class="dashboard-grid lower">
+            <article class="card pipeline-summary"><div class="card-head"><div><h2>Visão do pipeline</h2><p>Oportunidades por etapa</p></div><button (click)="navegar('Pipeline')">Abrir pipeline →</button></div>@for (etapa of d.pipelinePorEtapa; track etapa.etapa) { <div class="pipeline-row"><span>{{ rotulo(etapa.etapa) }}</span><div><i [style.width.%]="etapa.quantidade * 18"></i></div><b>{{ etapa.quantidade }}</b><strong>{{ moeda(etapa.valor) }}</strong></div> }</article>
+            <article class="card insight-card"><span class="insight-icon">✦</span><div><p class="eyebrow">INSIGHT DO DIA</p><h2>Sua receita prevista está saudável</h2><p>Há <strong>{{ moeda(d.receitaPrevista) }}</strong> em recebimentos pendentes. Acompanhe os vencimentos para preservar o fluxo de caixa.</p><button>Explorar análise →</button></div></article>
+          </section>
+        }
+
+        @if (pagina() === 'Clientes') {
+          <div class="page-head"><div><p class="eyebrow vinho">RELACIONAMENTO</p><h1>Clientes</h1><p>Histórico e relacionamento em um só lugar.</p></div><button class="primary-button compact">＋ Novo cliente</button></div>
+          <article class="card table-card"><div class="table-tools"><label class="table-search">⌕<input #buscaCliente placeholder="Buscar por nome" (input)="filtrarClientes(buscaCliente.value)"></label><span>{{ clientes().length }} clientes exibidos</span></div><div class="table-scroll"><table><thead><tr><th>Cliente</th><th>Contato</th><th>Tags</th><th>Status</th><th></th></tr></thead><tbody>@for (cliente of clientes(); track cliente.id) { <tr><td><div class="person"><span>{{ iniciais(cliente.nome) }}</span><strong>{{ cliente.nome }}</strong></div></td><td><strong>{{ cliente.email }}</strong><small>{{ cliente.telefone }}</small></td><td><span class="tag">{{ cliente.tags }}</span></td><td><span class="status">{{ rotulo(cliente.status) }}</span></td><td><button class="dots">•••</button></td></tr> }</tbody></table></div></article>
+        }
+
+        @if (pagina() === 'Pipeline') {
+          <div class="page-head"><div><p class="eyebrow vinho">COMERCIAL</p><h1>Pipeline de oportunidades</h1><p>{{ oportunidades().length }} negociações em acompanhamento.</p></div><button class="primary-button compact">＋ Nova oportunidade</button></div>
+          <div class="kanban">@for (etapa of etapas; track etapa) { <section class="kanban-column"><header><div><i></i><strong>{{ rotulo(etapa) }}</strong><span>{{ oportunidadesDaEtapa(etapa).length }}</span></div><b>{{ moeda(totalEtapa(etapa)) }}</b></header><div class="kanban-list">@for (o of oportunidadesDaEtapa(etapa); track o.id) { <article><div class="deal-top"><span>{{ o.probabilidade }}%</span><button>•••</button></div><h3>{{ o.titulo }}</h3><p>{{ o.cliente }}</p><strong>{{ moeda(o.valor) }}</strong><footer><span class="avatar small">{{ iniciais(o.responsavel) }}</span><small>até {{ data(o.previsaoFechamento) }}</small></footer></article> } @empty { <div class="drop-zone">Arraste uma oportunidade</div> }</div></section> }</div>
+        }
+
+        @if (pagina() === 'Agenda') {
+          <div class="page-head"><div><p class="eyebrow vinho">OPERAÇÃO</p><h1>Agenda</h1><p>Próximos 14 dias, sem conflitos de horário.</p></div><button class="primary-button compact">＋ Novo agendamento</button></div>
+          <article class="card timeline">@for (a of agendamentos(); track a.id) { <div class="timeline-row"><div class="timeline-time"><strong>{{ hora(a.inicio) }}</strong><small>{{ data(a.inicio) }}</small></div><i></i><div class="timeline-body"><div class="avatar">{{ iniciais(a.cliente) }}</div><div><strong>{{ a.cliente }}</strong><p>{{ a.servico }} com {{ a.profissional }}</p></div></div><strong>{{ moeda(a.valor) }}</strong><span class="status">{{ rotulo(a.status) }}</span></div> } @empty { <p class="empty">Nenhum agendamento no período.</p> }</article>
+        }
+
+        @if (pagina() === 'Financeiro') {
+          <div class="page-head"><div><p class="eyebrow vinho">SAÚDE FINANCEIRA</p><h1>Financeiro</h1><p>Receitas, despesas e previsibilidade de caixa.</p></div><button class="primary-button compact">＋ Novo lançamento</button></div>
+          <section class="mini-kpis"><article><small>Receita recebida</small><strong>{{ moeda(dashboard()?.receitaRecebida ?? 0) }}</strong></article><article><small>Despesas pagas</small><strong>{{ moeda(dashboard()?.despesasPagas ?? 0) }}</strong></article><article><small>A receber</small><strong>{{ moeda(dashboard()?.receitaPrevista ?? 0) }}</strong></article></section>
+          <article class="card table-card"><div class="table-scroll"><table><thead><tr><th>Descrição</th><th>Categoria</th><th>Vencimento</th><th>Status</th><th class="right">Valor</th></tr></thead><tbody>@for (l of lancamentos(); track l.id) { <tr><td><strong>{{ l.descricao }}</strong><small>{{ rotulo(l.tipo) }}</small></td><td>{{ l.categoria }}</td><td>{{ data(l.vencimento) }}</td><td><span class="status" [class.pending]="l.status === 'PENDENTE'">{{ rotulo(l.status) }}</span></td><td class="right money" [class.expense]="l.tipo === 'DESPESA'">{{ l.tipo === 'DESPESA' ? '−' : '+' }} {{ moeda(l.valor) }}</td></tr> }</tbody></table></div></article>
+        }
+      </main>
+    </section>
+  </div>
+}

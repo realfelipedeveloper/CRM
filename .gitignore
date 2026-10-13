@@ -1,0 +1,33 @@
+# Dependências e artefatos
+node_modules/
+dist/
+target/
+.angular/
+.idea/
+.vscode/
+*.iml
+*.log
+
+# Ambiente e segredos
+.env
+!.env.example
+*.pem
+*.key
+
+# Documentação interna não versionada
+docs/
+sdd/
+specs/
+adr/
+agents/
+engineering/
+reports/
+*.docx
+*.pdf
+
+# Dados locais
+.data/
+backups/
+playwright-report/
+test-results/
+
